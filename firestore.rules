@@ -1,0 +1,106 @@
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Rules for the "students" collection
+    match /students/{studentId} {
+      // Allow only specified admin users (JP, MS, BT) to read and write in the students collection
+      allow read, write: if request.auth != null && (
+        request.auth.uid in ['JP', 'MS', 'BT']
+      );
+    }
+
+    // Rules for the "users" collection
+    match /users/{userId} {
+      // Allow each user to read and write their own document
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // Allow only specified admins (JP, MS, BT) to read/write any user document
+      allow read, write: if request.auth != null && (
+        request.auth.uid in ['JP', 'MS', 'BT']
+      );
+
+      // Allow Ethereum address updates (specific to Ethereum integration)
+      allow update: if request.auth != null &&
+                    request.resource.data.keys().hasOnly(['ethereumAddress']) &&
+                    request.auth.uid == userId;
+    }
+
+    // Rules for the "trade_requests" collection
+    match /trade_requests/{tradeRequestId} {
+      // Allow users to read if they are involved in the request
+      allow read: if request.auth != null &&
+                   (resource.data.receiverID == request.auth.uid || resource.data.requesterID == request.auth.uid);
+
+      // Allow admins to write or users to create their own requests
+      allow write: if request.auth != null && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin" ||
+        request.resource.data.requesterID == request.auth.uid
+      );
+    }
+
+    // Rules for the "trade_negotiations" collection
+    match /trade_negotiations/{negotiationId} {
+      allow read: if request.auth != null &&
+                   (resource.data.receiverID == request.auth.uid || resource.data.requesterID == request.auth.uid);
+
+      allow write: if request.auth != null && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin" ||
+        request.resource.data.requesterID == request.auth.uid
+      );
+    }
+
+    // Rules for the "notifications" collection
+    match /notifications/{notificationId} {
+      allow read, write: if request.auth != null && resource.data.userID == request.auth.uid;
+    }
+
+    // Rules for the "messages" collection
+    match /messages/{messageId} {
+      allow read: if request.auth != null &&
+                   (resource.data.senderID == request.auth.uid || resource.data.receiverID == request.auth.uid);
+
+      allow write: if request.auth != null && request.resource.data.senderID == request.auth.uid;
+    }
+
+    // Rules for the "materials" collection
+    match /materials/{materialId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin" ||
+        request.resource.data.ownerID == request.auth.uid
+      );
+    }
+
+    // Rules for the "material_versions" collection
+    match /material_versions/{versionId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null &&
+                   get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+
+    // Rules for the "material_history" collection
+    match /material_history/{historyId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null &&
+                   get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+
+    // Rules for the "analytics_reporting" collection
+    match /analytics_reporting/{reportId} {
+      allow read: if request.auth != null && resource.data.user_ID == request.auth.uid;
+      allow write: if request.auth != null &&
+                   get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+
+    // Rules for the "activity_logs" collection
+    match /activity_logs/{logId} {
+      allow read: if request.auth != null && resource.data.userID == request.auth.uid;
+      allow write: if request.auth != null &&
+                   get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+  }
+}
+
+
+
+
