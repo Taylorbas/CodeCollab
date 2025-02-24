@@ -4,125 +4,159 @@
 //
 //  Created by Bassil Taylor on 11/26/24.
 //
+//
+import SwiftUI
+import Firebase
+import FirebaseFirestore
+import FirebaseStorage
+import PhotosUI
 
-//import SwiftUI
-//import Firebase
-//
-//struct MessageScreen: View {
-//    @State private var messages: [Message] = []
-//    @State private var isLoading = true
-//    @State private var newMessage = ""
-//    
-//    var senderID: String
-//    var receiverID: String
-//    
-//    var body: some View {
-//        NavigationView {
-//            VStack {
-//                if isLoading {
-//                    ProgressView("Loading messages...")
-//                        .progressViewStyle(CircularProgressViewStyle())
-//                        .padding()
-//                } else {
-//                    if messages.isEmpty {
-//                        Text("No messages available")
-//                            .font(.headline)
-//                            .padding()
-//                    } else {
-//                        List(messages) { message in
-//                            MessageRow(message: message, isSender: message.senderID == senderID)
-//                        }
-//                    }
-//                }
-//                
-//                HStack {
-//                    TextField("Enter your message", text: $newMessage)
-//                        .padding()
-//                        .textFieldStyle(RoundedBorderTextFieldStyle())
-//                    
-//                    Button(action: sendMessage) {
-//                        Image(systemName: "paperplane.fill")
-//                            .font(.title2)
-//                            .foregroundColor(.blue)
-//                    }
-//                }
-//                .padding()
-//            }
-//            .navigationBarTitle("Messages")
-//            .onAppear {
-//                loadMessages()
-//            }
-//        }
-//    }
-//    
-//    private func loadMessages() {
-//        let db = Firestore.firestore()
-//        db.collection("messages")
-//            .whereField("senderID", in: [senderID, receiverID])
-//            .whereField("receiverID", in: [senderID, receiverID])
-//            .order(by: "timestamp", descending: true)
-//            .addSnapshotListener { snapshot, error in
-//                if let error = error {
-//                    print("Error loading messages: \(error)")
-//                    return
-//                }
-//                guard let documents = snapshot?.documents else { return }
-//                self.messages = documents.compactMap { doc in
-//                    try? doc.data(as: Message.self)
-//                }
-//                self.isLoading = false
-//            }
-//    }
-//    
-//    private func sendMessage() {
-//        guard !newMessage.isEmpty else { return }
-//        
-//        let db = Firestore.firestore()
-//        let messageData: [String: Any] = [
-//            "senderID": senderID,
-//            "receiverID": receiverID,
-//            "message": newMessage,
-//            "timestamp": FieldValue.serverTimestamp()
-//        ]
-//        
-//        db.collection("messages")
-//            .addDocument(data: messageData) { error in
-//                if let error = error {
-//                    print("Error sending message: \(error)")
-//                } else {
-//                    newMessage = "" // Clear message input
-//                }
-//            }
-//    }
-//}
-//
-//struct MessageRow: View {
-//    var message: Message
-//    var isSender: Bool
-//    
-//    var body: some View {
-//        HStack {
-//            if isSender {
-//                Spacer()
-//            }
-//            Text(message.message)
-//                .padding()
-//                .background(isSender ? Color.blue : Color.gray.opacity(0.2))
-//                .foregroundColor(isSender ? .white : .black)
-//                .cornerRadius(10)
-//                .frame(maxWidth: 300, alignment: isSender ? .trailing : .leading)
-//            if !isSender {
-//                Spacer()
-//            }
-//        }
-//        .padding(.vertical, 5)
-//    }
-//}
-//
-//struct Message: Identifiable, Decodable {
-//    @DocumentID var id: String?
-//    var senderID: String
-//    var receiverID: String
-//    var message: String
-//    var timestamp: Date?
-//}
+struct MessagingHomeView: View {
+    @State private var contacts: [Contact] = []
+    @State private var searchText = ""
+    @State private var showingNewContactSheet = false
+    @EnvironmentObject var authViewModel: AuthViewModel
+
+    var body: some View {
+        NavigationView {
+            VStack {
+                TextField("Search by name or number", text: $searchText)
+                    .padding()
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .onChange(of: searchText) { _ in
+                        searchContacts()
+                    }
+
+                List(contacts) { contact in
+                    NavigationLink(destination: MessageScreen(receiverID: contact.id ?? "", authViewModel: authViewModel)) { // Removed senderID, passed authViewModel
+                        HStack {
+                            if let profileURL = contact.profilePicture, let url = URL(string: profileURL) {
+                                AsyncImage(url: url) { image in
+                                    image.resizable()
+                                } placeholder: {
+                                    Image(systemName: "person.circle.fill")
+                                        .resizable()
+                                        .foregroundColor(.gray)
+                                }
+                                .frame(width: 40, height: 40)
+                                .clipShape(Circle())
+                            } else {
+                                Image(systemName: "person.circle.fill")
+                                    .resizable()
+                                    .frame(width: 40, height: 40)
+                                    .foregroundColor(.gray)
+                            }
+                            VStack(alignment: .leading) {
+                                Text(contact.name)
+                                    .font(.headline)
+                                Text(contact.phoneNumber)
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                                Text(contact.role)
+                                    .font(.caption)
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                    }
+                }
+
+                Button(action: { showingNewContactSheet = true }) {
+                    HStack {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title)
+                        Text("Add New Contact")
+                            .font(.headline)
+                    }
+                    .foregroundColor(.blue)
+                    .padding()
+                }
+            }
+            .navigationTitle("Messages")
+            .onAppear { loadContacts() }
+            .sheet(isPresented: $showingNewContactSheet) {
+                NewContactView { newContact in
+                    contacts.append(newContact)
+                    saveContact(newContact)
+                }
+            }
+        }
+    }
+
+    private func searchContacts() {
+        if searchText.isEmpty {
+            loadContacts()
+        } else {
+            contacts = contacts.filter { $0.name.contains(searchText) || $0.phoneNumber.contains(searchText) }
+        }
+    }
+
+    private func loadContacts() {
+        let db = Firestore.firestore()
+        db.collection("contacts").getDocuments { snapshot, error in
+            if let error = error {
+                print("Error loading contacts: \(error)")
+                return
+            }
+            contacts = snapshot?.documents.compactMap { try? $0.data(as: Contact.self) } ?? []
+        }
+    }
+
+    private func saveContact(_ contact: Contact) {
+        let db = Firestore.firestore()
+        do {
+            try db.collection("contacts").document(contact.id ?? UUID().uuidString).setData(from: contact)
+        } catch {
+            print("Error saving contact: \(error)")
+        }
+    }
+}
+
+struct Contact: Identifiable, Codable {
+    @DocumentID var id: String?
+    var name: String
+    var phoneNumber: String
+    var profilePicture: String?
+    var role: String // "Student" or "Tutor"
+}
+
+struct Message: Identifiable {
+    var id: String
+    var senderID: String
+    var receiverID: String
+    var text: String
+    var timestamp: Date
+}
+
+struct NewContactView: View {
+    @Environment(\.presentationMode) var presentationMode
+    @State private var name = ""
+    @State private var phoneNumber = ""
+    @State private var role = "Student"
+    @State private var profilePictureURL: String?
+    var onSave: (Contact) -> Void
+
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Contact Information")) {
+                    TextField("Name", text: $name)
+                    TextField("Phone Number", text: $phoneNumber)
+                        .keyboardType(.phonePad)
+                    Picker("Role", selection: $role) {
+                        Text("Student").tag("Student")
+                        Text("Tutor").tag("Tutor")
+                    }
+                }
+
+                Button("Save") {
+                    let newContact = Contact(name: name, phoneNumber: phoneNumber, profilePicture: profilePictureURL, role: role)
+                    onSave(newContact)
+                    presentationMode.wrappedValue.dismiss()
+                }
+                .disabled(name.isEmpty || phoneNumber.isEmpty)
+            }
+            .navigationTitle("New Contact")
+            .navigationBarItems(leading: Button("Cancel") { presentationMode.wrappedValue.dismiss() })
+        }
+    }
+}

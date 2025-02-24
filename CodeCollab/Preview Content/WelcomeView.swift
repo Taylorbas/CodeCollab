@@ -14,22 +14,10 @@ struct WelcomeView: View {
     var body: some View {
         NavigationView { // Embed in a NavigationView to enable navigation
             VStack {
-                // Top bar with "Tutor Sign Up" and a right directional button
-                HStack {
-                    Spacer()
-                    Text("Tutor")
-                        .foregroundColor(.white)
-                        .font(.headline)
-                    
-                    NavigationLink(destination: WelcomeScreenTutor()) { // Link to WelcomeScreenTutor
-                        Image(systemName: "arrow.right.circle")
-                            .foregroundColor(.white)
-                            .font(.title)
-                    }
-                }
-                .padding()
                 
                 Spacer()
+                
+                
                 
                 // Title text at the top
                 Text("Welcome Students!!")
@@ -51,11 +39,27 @@ struct WelcomeView: View {
                     .font(.subheadline)
                     .multilineTextAlignment(.center)
                     .padding(.vertical, 20)
-
+                
                 Spacer()
+                
                 
                 // Buttons for Log In and Sign Up with navigation links
                 VStack(spacing: 20) {
+                    
+                    //Button settup for the tutor section
+                    NavigationLink(destination: WelcomeScreenTutor()) {
+                        Text("Tutor Login / Sign Up")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.black)
+                            .cornerRadius(30)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 30)
+                                    .stroke(Color.white, lineWidth: 2)
+                            )
+                    }
                     // Log In Button
                     NavigationLink(destination: LoginView()) {
                         Text("Log In")
