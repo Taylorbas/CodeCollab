@@ -22,7 +22,7 @@ struct MessageScreen: View {
     var body: some View {
         VStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 5) {
                     ForEach(authViewModel.messages) { message in // Use authViewModel.messages
                         HStack {
                             if message.senderID == authViewModel.senderID { // Use authViewModel.senderID

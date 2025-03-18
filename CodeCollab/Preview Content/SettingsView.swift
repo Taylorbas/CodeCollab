@@ -10,18 +10,19 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     @AppStorage("isDarkMode") private var isDarkMode: Bool = false
-    @State private var isMusicEnabled: Bool = true
-    @State private var isNotificationsEnabled: Bool = true
-    @State private var isLocationEnabled: Bool = false
-    @State private var cryptoWalletAddress: String = ""
+    @AppStorage("isMusicEnabled") private var isMusicEnabled: Bool = true
+    @AppStorage("isNotificationsEnabled") private var isNotificationsEnabled: Bool = true
+    @AppStorage("isLocationEnabled") private var isLocationEnabled: Bool = false
+    @AppStorage("cryptoWalletAddress") private var cryptoWalletAddress: String = "" // 🔹 Persisted Wallet Address
     @State private var showLogoutConfirmation = false
     @State private var showSwitchToTutorConfirmation = false
     @State private var navigateToTutorLogin = false
-
+    @State private var showInvalidAddressAlert = false
+    
     var body: some View {
         NavigationView {
             Form {
-                // 🔹 Theme Settings
+            
                 Section(header: Text("Appearance")) {
                     Toggle("Dark Mode", isOn: $isDarkMode)
                         .onChange(of: isDarkMode) { _ in
@@ -29,28 +30,23 @@ struct SettingsView: View {
                         }
                 }
                 
-                // 🔹 Audio Settings
-                Section(header: Text("Sound")) {
-                    Toggle("Background Music", isOn: $isMusicEnabled)
-                }
-                
-                // 🔹 Notifications & Location
-                Section(header: Text("Preferences")) {
-                    Toggle("Enable Notifications", isOn: $isNotificationsEnabled)
-                    Toggle("Use Location", isOn: $isLocationEnabled)
-                }
-                
-                // 🔹 Crypto Wallet Management
+               
                 Section(header: Text("Crypto Wallet")) {
                     TextField("Enter Wallet Address", text: $cryptoWalletAddress)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
-
+                    
                     Button(action: {
-                        // Save wallet address logic
-                        print("Wallet Set: \(cryptoWalletAddress)")
+                        if isValidCryptoAddress(cryptoWalletAddress) {
+                            print("Wallet Set: \(cryptoWalletAddress)")
+                        } else {
+                            showInvalidAddressAlert = true
+                        }
                     }) {
                         Text("Save Wallet")
                             .foregroundColor(.blue)
+                    }
+                    .alert(isPresented: $showInvalidAddressAlert) {
+                        Alert(title: Text("Invalid Address"), message: Text("Please enter a valid crypto wallet address."), dismissButton: .default(Text("OK")))
                     }
                     
                     if !cryptoWalletAddress.isEmpty {
@@ -62,32 +58,23 @@ struct SettingsView: View {
                         }
                     }
                 }
-
-                // 🔹 Switch to Tutor Option
-                Section {
-                    Button(action: {
-                        showSwitchToTutorConfirmation = true
-                    }) {
-                        HStack {
-                            Image(systemName: "person.crop.circle.badge.plus")
-                            Text("Switch to Tutor")
-                                .foregroundColor(.blue)
+                
+                
+                if !cryptoWalletAddress.isEmpty {
+                    Section(header: Text("Crypto Payments")) {
+                        Button(action: {
+                            initiateCryptoPayment()
+                        }) {
+                            HStack {
+                                Image(systemName: "bitcoinsign.circle.fill")
+                                Text("Pay with Crypto")
+                            }
                         }
-                    }
-                    .confirmationDialog(
-                        "Are you sure you want to switch to Tutor? You will be logged out and brought to the Tutor sign-in.",
-                        isPresented: $showSwitchToTutorConfirmation,
-                        titleVisibility: .visible
-                    ) {
-                        Button("Switch", role: .destructive) {
-                            authViewModel.logOut()
-                            navigateToTutorLogin = true
-                        }
-                        Button("Cancel", role: .cancel) {}
+                        .foregroundColor(.green)
                     }
                 }
-
-                // 🔹 Logout
+                
+               
                 Section {
                     Button(action: {
                         showLogoutConfirmation = true
@@ -107,13 +94,18 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
-            .background(
-                NavigationLink(destination: TutLoginView(), isActive: $navigateToTutorLogin) {
-                    EmptyView()
-                }
-                .hidden()
-            )
         }
+    }
+   
+    private func isValidCryptoAddress(_ address: String) -> Bool {
+        return address.hasPrefix("0x") && address.count == 42
+    }
+    
+   
+    private func initiateCryptoPayment() {
+        guard !cryptoWalletAddress.isEmpty else { return }
+        print("Initiating crypto payment to \(cryptoWalletAddress)...")
+        //  WalletConnect or MetaMask SDK here
     }
 }
 

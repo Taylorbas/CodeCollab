@@ -7,135 +7,156 @@
 
 
 import SwiftUI
+import FirebaseAuth
+
 struct SignUpView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     @Environment(\.presentationMode) var presentationMode
     @State private var fullName = ""
+    @State private var rangerID = ""
     @State private var phoneNumber = ""
     @State private var email = ""
     @State private var password = ""
-    @State private var errorMessage = "" // Error message state
-    @State private var showError = false // Boolean to toggle error visibility
-    // Error states for each field
-    @State private var fullNameError = false
-    @State private var phoneNumberError = false
-    @State private var emailError = false
-    @State private var passwordError = false
+    @State private var confirmPassword = ""
+    @State private var errorMessage = ""
+    @State private var showError = false
+    @State private var isLoading = false
+    
+    private let userQueries = UserQueries()
+    
     var body: some View {
         NavigationView {
-            ZStack {
-                Color.blue
-                    .ignoresSafeArea()
-                VStack(spacing: 20) {
-                    Text("Student Sign Up")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(.purple)
-                        .padding(.bottom, 100)
-                    if showError {
-                        Text(errorMessage)
-                            .foregroundColor(.red)
-                            .font(.system(size: 14))
-                            .padding(.bottom, 10)
-                    }
-                    TextField("Full Name", text: $fullName, onEditingChanged: { _ in
-                        fullNameError = false
-                    })
-                        .padding()
-                        .background(Color.white)
-                        .cornerRadius(30)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 30)
-                                .stroke(fullNameError ? Color.red : Color.black, lineWidth: 2)
-                        )
-                        .font(.system(size: 18))
-                    TextField("Phone Number", text: $phoneNumber, onEditingChanged: { _ in
-                        phoneNumberError = false
-                    })
-                        .padding()
-                        .background(Color.white)
-                        .cornerRadius(30)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 30)
-                                .stroke(phoneNumberError ? Color.red : Color.black, lineWidth: 2)
-                        )
-                        .font(.system(size: 18))
-                    TextField("E-mail Address", text: $email, onEditingChanged: { _ in
-                        emailError = false
-                    })
-                        .padding()
-                        .background(Color.white)
-                        .cornerRadius(30)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 30)
-                                .stroke(emailError ? Color.red : Color.black, lineWidth: 2)
-                        )
-                        .font(.system(size: 18))
-                        .keyboardType(.emailAddress)
-                    SecureField("Password", text: $password, onCommit: {
-                        passwordError = false
-                    })
-                        .padding()
-                        .background(Color.white)
-                        .cornerRadius(30)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 30)
-                                .stroke(passwordError ? Color.red : Color.black, lineWidth: 2)
-                        )
-                        .font(.system(size: 18))
-                    Button(action: {
-                        // Validation checks
-                        fullNameError = fullName.isEmpty
-                        phoneNumberError = phoneNumber.isEmpty
-                        emailError = email.isEmpty || !isValidEmail(email)
-                        passwordError = password.isEmpty
-                        if fullNameError || phoneNumberError || emailError || passwordError {
-                            showError = true
-                            errorMessage = "Please fill in all information."
-                            if emailError && !email.isEmpty {
-                                errorMessage = "Enter a valid email."
-                            }
-                        } else {
-                            showError = false
-                            authViewModel.signUp(fullName: fullName, phoneNumber: phoneNumber, email: email, password: password)
+            ZStack(alignment: .topLeading) {
+                Color("color1").ignoresSafeArea()
+                
+                VStack {
+                    VStack(spacing: 40) {
+                        ZStack {
+                            Ellipse()
+                                .frame(width: 458, height: 428)
+                                .padding(.trailing, -500)
+                                .foregroundColor(Color("color2"))
+                                .padding(.top, -200)
+                            
+                            Text("Create \nAccount")
+                                .foregroundColor(.white)
+                                .font(.system(size: 35))
+                                .fontWeight(.bold)
+                                .multilineTextAlignment(.leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.leading, 20)
+                                .padding(.top, 100)
                         }
-                    }) {
-                        Text("Create Account")
-                            .font(.headline)
+                        
+                        VStack(spacing: 20) {
+                            VStack(spacing: 0) {
+                                CustomTextField(placeHolder: "Full Name", imageName: "person", bColor: Color("textColor2"), tOpacity: 1.0, value: $fullName)
+                                CustomTextField(placeHolder: "Ranger ID", imageName: "person", bColor: Color("textColor2"), tOpacity: 1.0, value: $rangerID)
+                                CustomTextField(placeHolder: "Phone Number", imageName: "phone", bColor: Color("textColor2"), tOpacity: 1.0, value: $phoneNumber)
+                                CustomTextField(placeHolder: "Email", imageName: "envelope", bColor: Color("textColor2"), tOpacity: 1.0, value: $email)
+                                CustomTextField(placeHolder: "Password", imageName: "lock", bColor: Color("textColor2"), tOpacity: 1.0, value: $password, isSecure: true)
+                                CustomTextField(placeHolder: "Confirm Password", imageName: "lock", bColor: Color("textColor2"), tOpacity: 1.0, value: $confirmPassword, isSecure: true)
+                            }
+                            
+                            if showError {
+                                Text(errorMessage)
+                                    .foregroundColor(.red)
+                                    .font(.system(size: 14))
+                                    .padding(.bottom, 10)
+                            }
+                            
+                            VStack(alignment: .trailing) {
+                                Button(action: signUp) {
+                                    if isLoading {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    } else {
+                                        CustomButton(title: "SIGN UP", bgColor: Color("color2"))
+                                    }
+                                }
+                                .disabled(isLoading)
+                            }
+                            Spacer()
+                        }
+                    }
+                    Spacer()
+                    
+                    HStack {
+                        Text("Already have an Account?")
+                            .fontWeight(.bold)
                             .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.purple)
-                            .cornerRadius(30)
+                            .font(.system(size: 18))
+                        
+                        NavigationLink(destination: SignInView()) {
+                            Text("SIGN IN")
+                                .font(.system(size: 18))
+                                .foregroundColor(Color("color1"))
+                                .fontWeight(.bold)
+                        }
                     }
-                    .padding(.horizontal, 40)
+                    .frame(height: 63)
+                    .frame(minWidth: 0, maxWidth: .infinity)
+                    .background(Color("color2"))
+                    .ignoresSafeArea()
                 }
-                .padding()
+                
+                TopBarView()
             }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: {
-                        presentationMode.wrappedValue.dismiss()
-                    }) {
-                        Image(systemName: "chevron.left")
-                            .foregroundColor(.purple)
-                            .font(.title2)
-                    }
-                }
+            .edgesIgnoringSafeArea(.bottom)
+        }
+        .navigationBarHidden(true)
+    }
+    
+    private func signUp() {
+        if fullName.isEmpty || rangerID.isEmpty || phoneNumber.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty {
+            showError = true
+            errorMessage = "Please fill in all fields."
+            return
+        }
+        
+        if password != confirmPassword {
+            showError = true
+            errorMessage = "Passwords do not match."
+            return
+        }
+        
+        if !isValidEmail(email) {
+            showError = true
+            errorMessage = "Invalid email format."
+            return
+        }
+        
+        isLoading = true
+        Task {
+            do {
+                let authResult = try await Auth.auth().createUser(withEmail: email, password: password)
+                try await userQueries.registerUser(
+                    parksideID: authResult.user.uid,
+                    email: email,
+                    username: fullName,
+                    role: "Student"
+                )
+                isLoading = false
+                showError = false
+                authViewModel.isAuthenticated = true
+                presentationMode.wrappedValue.dismiss()
+            } catch {
+                isLoading = false
+                showError = true
+                errorMessage = error.localizedDescription
             }
         }
     }
-    // Email validation function
-    func isValidEmail(_ email: String) -> Bool {
+    
+    private func isValidEmail(_ email: String) -> Bool {
         let emailFormat = "^[A-Z0-9a-z._%+-]+@[A-Z0-9a-z.-]+\\.[A-Za-z]{2,}$"
         let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailFormat)
         return emailPredicate.evaluate(with: email)
     }
 }
+
 struct SignUpView_Previews: PreviewProvider {
     static var previews: some View {
-        SignUpView()
-            .environmentObject(AuthViewModel())
+        SignUpView().environmentObject(AuthViewModel())
     }
 }

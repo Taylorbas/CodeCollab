@@ -18,11 +18,11 @@ class SelectedCoding: ObservableObject {
 
 struct CodingContentView: View {
     @ObservedObject var codingStore: CodingStore
-    @ObservedObject var selectedCoding = SelectedCoding()
-    @State private var selectedResourceItem: Resource?
+    @StateObject var selectedCoding = SelectedCoding()
+    @State internal var selectedResourceItem: Resource?
     @State private var player: AVAudioPlayer?
     @State private var showAppIcon = true
-
+    
     var body: some View {
         NavigationView {
             ZStack {
@@ -30,19 +30,19 @@ struct CodingContentView: View {
                 LinearGradient(gradient: Gradient(colors: [Color.blue.opacity(0.2), Color.blue.opacity(0.6)]),
                                startPoint: .top,
                                endPoint: .bottom)
-                    .ignoresSafeArea()
-
+                .ignoresSafeArea()
+                
                 VStack {
-
-
+                    
+                    
                     VStack(alignment: .leading, spacing: 25) {
                         Text("Coders Handbook")
                             .font(.largeTitle)
                             .fontWeight(.bold)
                             .padding(.horizontal)
-
-                      
-
+                        
+                        
+                        
                         if codingStore.categories.isEmpty {
                             Text("Loading categories...")
                                 .font(.headline)
@@ -68,7 +68,7 @@ struct CodingContentView: View {
                                 .padding()
                             }
                         }
-
+                        
                         if selectedCoding.showResources {
                             if codingStore.resources.isEmpty {
                                 Text("Loading resources...")
@@ -98,32 +98,41 @@ struct CodingContentView: View {
                             // CodeHub action
                         }) {
                             VStack {
-                                Image(systemName: "book.closed")
-                                Text("Tutors")
-                                    .font(.caption)
-                            }
-                        }
-                        Spacer()
-                        Button(action: {
-                            // Settings action
-                        }) { VStack {
-                            NavigationLink(destination: MessagingHomeView()) {
-                                VStack {
-                                    Image(systemName: "bubble.left.and.bubble.right")
-                                    Text("Messaging")
-                                        .font(.caption)
+                                NavigationLink(destination: TutorContactsView()) {
+                                    VStack {
+                                        Image(systemName: "book.closed")
+                                        Text("Tutors")
+                                            .font(.caption)
+                                    }
                                 }
                             }
-                        }
                         }
                         Spacer()
                         Button(action: {
                             // Settings action
                         }) {
                             VStack {
-                                Image(systemName: "desktopcomputer")
-                                Text("CodeHub")
-                                    .font(.caption)
+                                NavigationLink(destination: MessagingHomeView()) {
+                                    VStack {
+                                        Image(systemName: "bubble.left.and.bubble.right")
+                                        Text("Messaging")
+                                            .font(.caption)
+                                    }
+                                }
+                            }
+                        }
+                        Spacer()
+                        Button(action: {
+                            // CodeHub action
+                        }) {
+//                            VStack {
+//                                NavigationLink(destination: BlogDiscussionBoard()) {
+                                    VStack {
+                                        Image(systemName: "desktopcomputer")
+                                        Text("CodeHub")
+                                            .font(.caption)
+                                    
+                                
                             }
                         }
                         Spacer()
@@ -139,7 +148,6 @@ struct CodingContentView: View {
                                             .font(.caption)
                                     }
                                 }
-
                             }
                         }
                         Spacer()
@@ -160,108 +168,99 @@ struct CodingContentView: View {
                         Spacer()
                     }
                     .padding()
-                    .background(Color.white.shadow(radius: 5))
+                    .background(Color(.systemBackground).shadow(radius: 5))
+                    .ignoresSafeArea(edges: .bottom) // Ensures it extends to the bottom
+
                 }
             }
             .onAppear {
                 codingStore.fetchCategories()
-                playBackgroundMusic()
+                AudioManager()
             }
         }
     }
-
-    func playBackgroundMusic() {
-        guard let url = Bundle.main.url(forResource: "Aylex - Meditation (freetouse.com)", withExtension: "mp3") else {
-            print("Error: MP3 file not found")
-            return
-        }
-        do {
-            player = try AVAudioPlayer(contentsOf: url)
-            player?.numberOfLoops = -1
-            player?.play()
-        } catch {
-            print("Error playing background music: \(error.localizedDescription)")
-        }
-    }
-}
-
-struct ResourceRow: View {
-    var resource: Resource
-
-    var body: some View {
-        VStack(alignment: .leading) {
-            Text(resource.name)
-                .font(.headline)
-            Text(resource.description)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+    
+    
+    
+    struct ResourceRow: View {
+        var resource: Resource
+        
+        var body: some View {
+            VStack(alignment: .leading) {
+                Text(resource.name)
+                    .font(.headline)
+                Text(resource.description)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
                 
-            if let url = URL(string: resource.url) {
-                Link("Learn More", destination: url)
-                    .font(.body)
-                    .foregroundColor(.blue)
+                if let url = URL(string: resource.url) {
+                    Link("Learn More", destination: url)
+                        .font(.body)
+                        .foregroundColor(.blue)
+                }
             }
+            .padding()
         }
-        .padding()
     }
-}
-
-struct DescriptionView: View {
-    var resource: Resource
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            if let imageName = resource.imageName, UIImage(named: imageName) != nil {
-                Image(imageName)
-                    .resizable()
-                    .scaledToFit()
-                    .cornerRadius(10)
-            } else {
-                Image(systemName: "photo")
-                    .resizable()
-                    .scaledToFit()
-                    .foregroundColor(.gray)
-                    .cornerRadius(10)
-            }
-
-            Text(resource.name)
-                .font(.title)
-                .fontWeight(.bold)
-
-            Text(resource.description)
-                .font(.body)
-                .foregroundColor(.secondary)
-
-            Spacer()
-            if let url = URL(string: resource.url) {
-                Button(action: {
-                    UIApplication.shared.open(url)
-                }) {
-                    Text("Visit site?")
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.black)
-                        .foregroundColor(.white)
+    
+    struct DescriptionView: View {
+        var resource: Resource
+        
+        var body: some View {
+            VStack(alignment: .leading, spacing: 20) {
+                if let imageName = resource.imageName, UIImage(named: imageName) != nil {
+                    Image(imageName)
+                        .resizable()
+                        .scaledToFit()
+                        .cornerRadius(10)
+                } else {
+                    Image(systemName: "photo")
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundColor(.gray)
                         .cornerRadius(10)
                 }
-                .padding(.horizontal)
+                
+                Text(resource.name)
+                    .font(.title)
+                    .fontWeight(.bold)
+                
+                Text(resource.description)
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+                if let url = URL(string: resource.url) {
+                    Button(action: {
+                        UIApplication.shared.open(url)
+                    }) {
+                        Text("Visit site?")
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color.black)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                    .padding(.horizontal)
+                }
             }
-        }
-        .padding()
-        .navigationBarTitle(Text(resource.name), displayMode: .inline)
-        .background(
-            LinearGradient(gradient: Gradient(colors: [Color.blue.opacity(0.2), Color.blue.opacity(0.6)]),
-                           startPoint: .top,
-                           endPoint: .bottom)
+            .padding()
+            .navigationBarTitle(Text(resource.name), displayMode: .inline)
+            .background(
+                LinearGradient(gradient: Gradient(colors: [Color.blue.opacity(0.2), Color.blue.opacity(0.6)]),
+                               startPoint: .top,
+                               endPoint: .bottom)
                 .ignoresSafeArea()
-        )
+            )
+        }
     }
-}
-
-struct CodingContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        let codingStore = CodingStore()
-        return CodingContentView(codingStore: codingStore)
-            .environmentObject(AuthViewModel())
+    
+    struct CodingContentView_Previews: PreviewProvider {
+        static var previews: some View {
+            let codingStore = CodingStore()
+            return CodingContentView(codingStore: codingStore)
+                .environmentObject(AuthViewModel())
+        }
     }
+    
 }

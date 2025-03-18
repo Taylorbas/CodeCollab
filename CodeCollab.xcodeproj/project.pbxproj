@@ -15,7 +15,6 @@
 		DB1531F12CC0DD6C0040B315 /* FirebaseDynamicLinks in Frameworks */ = {isa = PBXBuildFile; productRef = DB1531F02CC0DD6C0040B315 /* FirebaseDynamicLinks */; };
 		DB1531F32CC0DD6C0040B315 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = DB1531F22CC0DD6C0040B315 /* FirebaseFirestore */; };
 		DB1531F52CC0DD6C0040B315 /* FirebaseFirestoreCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = DB1531F42CC0DD6C0040B315 /* FirebaseFirestoreCombine-Community */; };
-		DB15323E2D0B88E70001D35D /* web3swift in Frameworks */ = {isa = PBXBuildFile; productRef = DB15323D2D0B88E70001D35D /* web3swift */; };
 		DB15334B2CDABBF70040B315 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = DB15334A2CDABBF70040B315 /* FirebaseFunctions */; };
 		DB15334D2CDABBF70040B315 /* FirebaseFunctionsCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = DB15334C2CDABBF70040B315 /* FirebaseFunctionsCombine-Community */; };
 		DB15334F2CDABBF70040B315 /* FirebaseInAppMessaging-Beta in Frameworks */ = {isa = PBXBuildFile; productRef = DB15334E2CDABBF70040B315 /* FirebaseInAppMessaging-Beta */; };
@@ -85,7 +84,6 @@
 				DB1533552CDABBF70040B315 /* FirebaseStorageCombine-Community in Frameworks */,
 				DB1533532CDABBF70040B315 /* FirebaseStorage in Frameworks */,
 				DB1531EB2CC0DD6C0040B315 /* FirebaseAuthCombine-Community in Frameworks */,
-				DB15323E2D0B88E70001D35D /* web3swift in Frameworks */,
 				DB1531E92CC0DD6C0040B315 /* FirebaseAuth in Frameworks */,
 				DB1531F12CC0DD6C0040B315 /* FirebaseDynamicLinks in Frameworks */,
 				DB1531F32CC0DD6C0040B315 /* FirebaseFirestore in Frameworks */,
@@ -165,7 +163,6 @@
 				DB1533542CDABBF70040B315 /* FirebaseStorageCombine-Community */,
 				DBF3FC012CEF0EB00047EF2A /* FirebaseAnalyticsOnDeviceConversion */,
 				DBF3FC032CEF0EB00047EF2A /* FirebaseCore */,
-				DB15323D2D0B88E70001D35D /* web3swift */,
 			);
 			productName = CodeCollab;
 			productReference = DB1531A82CC0D0170040B315 /* CodeCollab.app */;
@@ -251,7 +248,6 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				DB1531E52CC0DD6C0040B315 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
-				DB15323C2D0B88E70001D35D /* XCRemoteSwiftPackageReference "web3swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DB1531A92CC0D0170040B315 /* Products */;
@@ -620,14 +616,6 @@
 				minimumVersion = 11.3.0;
 			};
 		};
-		DB15323C2D0B88E70001D35D /* XCRemoteSwiftPackageReference "web3swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/skywinder/web3swift.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 3.2.2;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -670,11 +658,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = DB1531E52CC0DD6C0040B315 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = "FirebaseFirestoreCombine-Community";
-		};
-		DB15323D2D0B88E70001D35D /* web3swift */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = DB15323C2D0B88E70001D35D /* XCRemoteSwiftPackageReference "web3swift" */;
-			productName = web3swift;
 		};
 		DB15334A2CDABBF70040B315 /* FirebaseFunctions */ = {
 			isa = XCSwiftPackageProductDependency;

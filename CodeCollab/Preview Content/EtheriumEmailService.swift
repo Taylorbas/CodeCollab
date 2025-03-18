@@ -5,66 +5,107 @@
 //  Created by Bassil Taylor on 12/5/24.
 //
 
-//import Foundation
-//import FirebaseCore
-//import FirebaseFirestore
-//import FirebaseAuth
-//
-//// Blockchain Service Placeholder
-//class BlockchainService {
-//    func generateEthereumAddress() -> String {
-//        // Simulate Ethereum address generation
-//        return "0x1234567890ABCDEF1234567890ABCDEF12345678"
-//    }
-//}
-//
-//// Email Service Placeholder
-//class EmailService {
-//    func sendEmail(to recipient: String, subject: String, body: String) {
-//        // Simulate email sending (replace with actual email API)
-//        print("Email sent to \(recipient) with subject: \(subject) and body: \(body)")
-//    }
-//}
-//
-//class EthereumEmailService {
-//    private let firestore = Firestore.firestore()
-//    private let blockchainService = BlockchainService()
-//    private let emailService = EmailService()
-//
-//    // Function to generate Ethereum address, store in Firestore, and send via email
-//    func generateAndSendEthereumAddress(for userID: String, to email: String) async throws {
-//        // Step 1: Generate Ethereum Address
-//        let ethereumAddress = blockchainService.generateEthereumAddress()
-//
-//        // Step 2: Store Ethereum Address in Firestore
-//        let userRef = firestore.collection("users").document(userID)
-//        try await userRef.updateData([
-//            "ethereumAddress": ethereumAddress
-//        ])
-//
-//        // Step 3: Send Ethereum Address via Email
-//        let emailSubject = "Your Ethereum Address"
-//        let emailBody = "Hello! Your Ethereum address is: \(ethereumAddress)"
-//        emailService.sendEmail(to: email, subject: emailSubject, body: emailBody)
-//
-//        print("Ethereum address generated, stored, and sent to \(email)")
-//    }
-//}
-//
-//// Test Functionality
-//@main
-//struct Main {
-//    static func main() async {
-//        FirebaseApp.configure() // Ensure Firebase is configured properly
-//
-//        let service = EthereumEmailService()
-//        do {
-//            try await service.generateAndSendEthereumAddress(
-//                for: "user123",
-//                to: "testuser@example.com"
-//            )
-//        } catch {
-//            print("Error: \(error)")
-//        }
-//    }
-//}
+import SwiftUI
+struct EthereumEmailServiceView: View {
+    // Instance of BlockchainServices
+    private let blockchainServices = BlockchainServices()
+    // State variables for user input and UI feedback
+    @State private var parksideID: String = ""
+    @State private var email: String = ""
+    @State private var isProcessing: Bool = false
+    @State private var statusMessage: String = ""
+    @State private var showAlert: Bool = false
+    var body: some View {
+        VStack(spacing: 20) {
+            // Title
+            Text("Student Ethereum Signup")
+                .font(.title)
+                .fontWeight(.bold)
+            // Parkside ID input
+            TextField("Enter Parkside ID", text: $parksideID)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding(.horizontal)
+                .autocapitalization(.none)
+                .disableAutocorrection(true)
+            // Generic email input (no Ranger-specific requirement)
+            TextField("Enter Email", text: $email)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding(.horizontal)
+                .keyboardType(.emailAddress)
+                .autocapitalization(.none)
+                .disableAutocorrection(true)
+            // Signup button
+            Button(action: {
+                Task {
+                    await registerStudent()
+                }
+            }) {
+                Text(isProcessing ? "Processing..." : "Sign Up with Ethereum")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(isProcessing ? Color.gray : Color.blue)
+                    .cornerRadius(10)
+            }
+            .disabled(isProcessing || parksideID.isEmpty || email.isEmpty)
+            .padding(.horizontal)
+            // Status message
+            Text(statusMessage)
+                .foregroundColor(statusMessage.contains("Error") ? .red : .green)
+                .font(.subheadline)
+                .padding(.top, 10)
+        }
+        .padding()
+        .alert(isPresented: $showAlert) {
+            Alert(
+                title: Text("Signup Status"),
+                message: Text(statusMessage),
+                dismissButton: .default(Text("OK")) {
+                    statusMessage = "" // Clear message after alert
+                }
+            )
+        }
+    }
+    // Function to handle registration
+    private func registerStudent() async {
+        guard !parksideID.isEmpty, !email.isEmpty else {
+            statusMessage = "Please fill in all fields."
+            showAlert = true
+            return
+        }
+        // Basic email format check (no domain restriction)
+        guard email.contains("@") && email.contains(".") else {
+            statusMessage = "Please enter a valid email address."
+            showAlert = true
+            return
+        }
+        isProcessing = true
+        statusMessage = ""
+        // Call BlockchainServices to register and send Ethereum address
+        await blockchainServices.registerAndSendEthereumAddress(
+            parksideID: parksideID,
+            rangerEmail: email // Using generic email now
+        )
+        // Simulate checking the result
+        let result = await blockchainServices.sendEthereumAddress(
+            rangerEmail: email,
+            ethereumAddress: blockchainServices.getEthereumAddress(
+                privateKey: blockchainServices.generateEthereumKey()
+            )
+        )
+        isProcessing = false
+        if result == "Success" {
+            statusMessage = "Signup successful! Ethereum address registered."
+        } else {
+            statusMessage = "Error during signup. Please try again."
+        }
+        showAlert = true
+    }
+}
+// Preview for SwiftUI
+struct EthereumEmailServiceView_Previews: PreviewProvider {
+    static var previews: some View {
+        EthereumEmailServiceView()
+    }
+}
